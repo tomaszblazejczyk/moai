@@ -36,7 +36,8 @@ setup(
         'sqlite=moai.database:SQLDatabase',
         'mysql=moai.database:SQLDatabase',
         'postgres=moai.database:SQLDatabase',
-        'oracle=moai.database:SQLDatabase'],
+        'oracle=moai.database:SQLDatabase',
+	'ckan=moai.datafactory:CKANDataFactory'],
     'moai.provider':[
         'file=moai.provider.file:FileBasedContentProvider',
         'list=moai.provider.list:ListBasedContentProvider',
