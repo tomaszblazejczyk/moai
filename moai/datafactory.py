@@ -3,6 +3,7 @@ import datetime
 import ckan.model.meta as meta
 from ckan.model import Package, Resource, PackageExtra, Vocabulary
 from ckanext.ceon.model import CeonPackageAuthor
+from ckanext.doi.model.doi import DOI
 
 from moai.utils import get_moai_log
 
@@ -70,6 +71,11 @@ class CKANDataFactory(object):
 
         for package in packageList:
             
+            doi = None
+            doiList = meta.Session.query(DOI).filter(DOI.package_id == package.id)
+            for doiCandidate in doiList:
+                doi = doiCandidate.identifier
+            
             resourceList = meta.Session.query(Resource).filter(Resource.package_id == package.id).filter(Resource.state == 'active')
             for resource in resourceList:
                 resourceMetadata = {'title': [resource.name],
@@ -77,7 +83,7 @@ class CKANDataFactory(object):
                         'description': [resource.description],
                         'rights': [package.license.url],
                         'type': [resource.format],
-                        'relation': [package.url]
+                        'relation': []
                     }
 
                 yield {'id': resource.id,
@@ -117,7 +123,7 @@ class CKANDataFactory(object):
                 subjects.append(packageTag.name)
             
             packageMetadata = {'title': [package.title],
-                        'identifier': [package.url],
+                        'identifier': [],
                         'description': [package.notes],
                         'creator': creator,
                         'contributor': [],
@@ -136,6 +142,9 @@ class CKANDataFactory(object):
                 packageMetadata.get('date').append(publicationYear);
             if citation:
                 packageMetadata.get('relation').append(citation);
+            if (doi):
+                packageMetadata.get('identifier').append(doi)
+                resourceMetadata.get('relation').append(doi)
                 
             for funder in package.get_tags(Vocabulary.get('oa_funders')):
                 packageMetadata.get('contributor').append(funder.name)
