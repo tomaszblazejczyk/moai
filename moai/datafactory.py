@@ -40,19 +40,12 @@ class CKANDataFactory(object):
         return set_ids
 
     def oai_sets(self, offset=0, batch_size=20):
-        for row in self._sets.select(
-              self._sets.c.hidden == False
-            ).offset(offset).limit(batch_size).execute():
-            yield {'id': row.set_id,
-                   'name': row.name,
-                   'description': row.description}
+
+        return [{'id': 'public',
+                 'name': 'public',
+                 'description': 'public'}]
 
     def oai_earliest_datestamp(self):
-#        row = sql.select([self._records.c.modified],
-#                         order_by=[sql.asc(self._records.c.modified)]
-#                         ).limit(1).execute().fetchone()
-#        if row:
-#            return row[0]
         return datetime.datetime(1970, 1, 1)
     
     def oai_query(self,
@@ -65,9 +58,57 @@ class CKANDataFactory(object):
                   until_date=None,
                   identifier=None):
 
+        # make sure until date is set, and not in future
+        if until_date == None or until_date > datetime.datetime.utcnow():
+            until_date = datetime.datetime.utcnow()
 
-            
+        
         packageList = meta.Session.query(Package).filter(Package.private == False).filter(Package.state == 'active')
+        packageList = packageList.filter(Package.metadata_modified  <= until_date)
+        if (from_date):
+            packageList = packageList.filter(Package.metadata_modified  > from_date)
+        if (identifier):
+            #find package or resource with specified identifier
+            packageList = packageList.filter(Package.id  == identifier)
+            resourceList = meta.Session.query(Resource).filter(Resource.state == 'active').filter(Resource.id == identifier)
+            resourceList = resourceList.filter(Resource.created  <= until_date)
+            if (from_date):
+                resourceList = resourceList.filter(Resource.created  > from_date)
+                
+            for resource in resourceList:
+                #fill package information of resource found with identifier
+                packagesOfResourceList = meta.Session.query(Package).filter(Package.private == False).filter(Package.state == 'active').filter(Package.id == resource.package_id)
+                licenses = []
+                for packageOfResource in packagesOfResourceList:
+                    doi = None
+                    doiList = meta.Session.query(DOI).filter(DOI.package_id == packageOfResource.id)
+                    for doiCandidate in doiList:
+                        doi = doiCandidate.identifier
+                    licenses.append(packageOfResource.license.url)
+                        
+                    resourceMetadata = {'title': [resource.name],
+                                        'identifier': [resource.url],
+                                        'description': [resource.description],
+                                        'rights': licenses,
+                                        'type': [resource.format],
+                                        'relation': [],
+                                        'relation.isPartOf': [],
+                                        'date.available': [resource.created.strftime("%Y-%m-%d_%H:%M:%S.%f")],
+                                        'date.modified': []
+                    }
+                    if (doi):
+                        resourceMetadata.get('relation.isPartOf').append(doi);
+                    if (resource.last_modified):
+                        resourceMetadata.get('date.modified').append(resource.last_modified.strftime("%Y-%m-%d_%H:%M:%S.%f"))
+                
+                    yield {'id': resource.id,
+                       'deleted': False,
+                       'modified': resource.created,
+                       'metadata': resourceMetadata,
+                       'sets': ['public']
+                    }
+
+
 
         for package in packageList:
             
@@ -77,15 +118,30 @@ class CKANDataFactory(object):
                 doi = doiCandidate.identifier
             
             resourceList = meta.Session.query(Resource).filter(Resource.package_id == package.id).filter(Resource.state == 'active')
+            resourceList = resourceList.filter(Resource.created  <= until_date)
+            if (from_date):
+                resourceList = resourceList.filter(Resource.created  > from_date)
+
+            if (identifier):
+                resourceList.filter(Resource.id == identifier)
+            resources = []
             for resource in resourceList:
                 resourceMetadata = {'title': [resource.name],
                         'identifier': [resource.url],
                         'description': [resource.description],
                         'rights': [package.license.url],
                         'type': [resource.format],
-                        'relation': []
+                        'relation': [],
+                        'relation.isPartOf': [],
+                        'date.available': [resource.created.strftime("%Y-%m-%d_%H:%M:%S.%f")],
+                        'date.modified': []
                     }
-
+                if (doi):
+                    resourceMetadata.get('relation.isPartOf').append(doi);
+                if (resource.last_modified):
+                    resourceMetadata.get('date.modified').append(resource.last_modified.strftime("%Y-%m-%d_%H:%M:%S.%f"))
+                
+                resources.append(resource.url)
                 yield {'id': resource.id,
                        'deleted': False,
                        'modified': resource.created,
@@ -124,27 +180,30 @@ class CKANDataFactory(object):
             
             packageMetadata = {'title': [package.title],
                         'identifier': [],
+                        'identifier.url': [package.url],
                         'description': [package.notes],
                         'creator': creator,
                         'contributor': [],
                         'subject': [],
                         'type': [package.type],
                         'publisher': [],
-                        'date': [],
+                        'date.available': [],
                         'relation': [],
-                        'subject': subjects
+                        'relation.isReferencedBy': [],
+                        'relation.hasPart': resources,
+                        'subject': subjects,
+                        'url':['defaultUrl']
                     }
             if grantNumber:
                 packageMetadata.get('contributor').append(grantNumber);
             if publisher:
                 packageMetadata.get('publisher').append(publisher);
             if publicationYear:
-                packageMetadata.get('date').append(publicationYear);
+                packageMetadata.get('date.available').append(publicationYear);
             if citation:
-                packageMetadata.get('relation').append(citation);
+                packageMetadata.get('relation.isReferencedBy').append(citation);
             if (doi):
                 packageMetadata.get('identifier').append(doi)
-                resourceMetadata.get('relation').append(doi)
                 
             for funder in package.get_tags(Vocabulary.get('oa_funders')):
                 packageMetadata.get('contributor').append(funder.name)
