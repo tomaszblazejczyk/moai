@@ -129,7 +129,8 @@ class CKANDataFactory(object):
                 resourceMetadata = {'title': [resource.name],
                         'identifier': [resource.url],
                         'description': [resource.description],
-                        'rights': [package.license.url],
+                        'rights': [package.license.id],
+                        'rights.url': [package.license.url],
                         'type': [resource.format],
                         'relation': [],
                         'relation.isPartOf': [],
@@ -153,11 +154,14 @@ class CKANDataFactory(object):
             packageAuthors = meta.Session.query(CeonPackageAuthor).filter(CeonPackageAuthor.package_id == package.id)
             
             creator = []
+            creatorAffiliation = []
             
             for packageAuthor in packageAuthors:
                 creator.append(packageAuthor.lastname + ' ' + packageAuthor.firstname)
-                if packageAuthor.affiliation:
-                    creator.append(packageAuthor.affiliation)
+                if (packageAuthor.affiliation):
+                    creatorAffiliation.append(packageAuthor.affiliation)
+                else:
+                    creatorAffiliation.append('none')
                     
             
             packageExtras = meta.Session.query(PackageExtra).filter(PackageExtra.package_id == package.id)
@@ -180,14 +184,19 @@ class CKANDataFactory(object):
             
             packageMetadata = {'title': [package.title],
                         'identifier': [],
+                        'identifier.doi': [],
                         'identifier.url': [package.url],
                         'description': [package.notes],
                         'creator': creator,
+                        'creator.affiliation': creatorAffiliation,
                         'contributor': [],
+                        'contributor.funder': [],
+                        'contributor.fundingProgram': [],
+                        'contributor.grantNumber': [],
                         'subject': [],
                         'type': [package.type],
                         'publisher': [],
-                        'date.available': [],
+                        'date.publication': [],
                         'relation': [],
                         'relation.isReferencedBy': [],
                         'relation.hasPart': resources,
@@ -195,20 +204,20 @@ class CKANDataFactory(object):
                         'url':['defaultUrl']
                     }
             if grantNumber:
-                packageMetadata.get('contributor').append(grantNumber);
+                packageMetadata.get('contributor.grantNumber').append(grantNumber);
             if publisher:
                 packageMetadata.get('publisher').append(publisher);
             if publicationYear:
-                packageMetadata.get('date.available').append(publicationYear);
+                packageMetadata.get('date.publication').append(publicationYear);
             if citation:
                 packageMetadata.get('relation.isReferencedBy').append(citation);
             if (doi):
-                packageMetadata.get('identifier').append(doi)
+                packageMetadata.get('identifier.doi').append(doi)
                 
             for funder in package.get_tags(Vocabulary.get('oa_funders')):
-                packageMetadata.get('contributor').append(funder.name)
+                packageMetadata.get('contributor.funder').append(funder.name)
             for program in package.get_tags(Vocabulary.get('oa_funding_programs')):
-                packageMetadata.get('contributor').append(program.name)
+                packageMetadata.get('contributor.fundingProgram').append(program.name)
             for discipline in package.get_tags(Vocabulary.get('sci_disciplines')):
                 packageMetadata.get('subject').append(discipline.name)
                             

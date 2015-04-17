@@ -57,6 +57,10 @@ class OAIDC(object):
                 element2 = el(value)
                 element2.set('{http://www.w3.org/2001/XMLSchema-instance}'+'type', etree.QName('{http://purl.org/dc/terms/}URI'))
                 oai_dc.append(element2)
+            elif field == 'identifier' and data['metadata'].get('identifier.doi'):
+                value = data['metadata']['identifier.url'][0]
+                element2 = el(value)
+                oai_dc.append(element2)
             elif field == 'rights' and data['metadata'].get('rights.uri'):
                 value = data['metadata']['rights.uri'][0]
                 element2 = el(value)
@@ -78,10 +82,23 @@ class OAIDC(object):
                 for value in data['metadata']['date.available']:
                     el2 = getattr(DCTERMS, 'available')
                     oai_dc.append(el2(value))
+            elif field == 'date' and data['metadata'].get('date.publication'):
+                for value in data['metadata']['date.publication']:
+                    el2 = getattr(DCTERMS, 'available')
+                    oai_dc.append(el2(value))
             elif field == 'date' and data['metadata'].get('date.modified'):
                 for value in data['metadata']['date.modified']:
                     el2 = getattr(DCTERMS, 'modified')
                     oai_dc.append(el2(value))
+            elif field == 'contributor' and data['metadata'].get('contributor.funder'):
+                for value in data['metadata']['contributor.funder']:
+                    oai_dc.append(el(value))
+            elif field == 'contributor' and data['metadata'].get('contributor.fundingProgram'):
+                for value in data['metadata']['contributor.fundingProgram']:
+                    oai_dc.append(el(value))
+            elif field == 'contributor' and data['metadata'].get('contributor.grantNumber'):
+                for value in data['metadata']['contributor.grantNumber']:
+                    oai_dc.append(el(value))
             else:
                 for value in data['metadata'].get(field, []):
                     oai_dc.append(el(value))
