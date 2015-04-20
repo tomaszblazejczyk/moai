@@ -166,6 +166,10 @@ class CKANDataFactory(object):
             
             packageExtras = meta.Session.query(PackageExtra).filter(PackageExtra.package_id == package.id)
             
+            grantNumber = ''
+            publisher = ''
+            publicationYear = ''
+            citation = ''
             
             for packageExtra in packageExtras:
                 if packageExtra.key == 'oa_grant_number':
