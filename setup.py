@@ -49,7 +49,9 @@ setup(
          'mods=moai.metadata.mods:MODS',
          'nl_mods=moai.metadata.mods:NL_MODS',
          'didl=moai.metadata.didl:DIDL',
-         'nl_didl=moai.metadata.dare_didl:DareDIDL'
+         'nl_didl=moai.metadata.dare_didl:DareDIDL',
+         'oai_datacite=moai.metadata.datacite:OAIDATACITE'
+
      ],
     },
     install_requires=[
