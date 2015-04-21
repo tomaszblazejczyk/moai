@@ -8,6 +8,7 @@ of :ref:`IServer` and :ref:`IFeedConfig`.
 """
 import os
 import tempfile
+from urlparse import urlparse
 
 import oaipmh.error
 
@@ -86,12 +87,12 @@ class Server(object):
         return False
             
     def handle_request(self, req):
-        if not req.url().startswith(self.base_url):
-            return req.send_status(
-                '500 Internal Server Error',
-                'The url "%s" does not start with base url "%s".' % (
-                req.url(), self.base_url))
-        url = req.url()[len(self.base_url):]
+        o = urlparse(req.url())
+        url = o.path
+        if o.query:
+            url = url + '?' + o.query
+        if o.fragment:
+            url = url + '#' + o.fragment
         
         if url.startswith('/'):
             url = url[1:]
