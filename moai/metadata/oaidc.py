@@ -54,9 +54,10 @@ class OAIDC(object):
             el = getattr(DC, field)
             if field == 'identifier' and data['metadata'].get('identifier.url'):
                 value = data['metadata']['identifier.url'][0]
-                element2 = el(value)
-                element2.set('{http://www.w3.org/2001/XMLSchema-instance}'+'type', etree.QName('{http://purl.org/dc/terms/}URI'))
-                oai_dc.append(element2)
+                if value:
+                    element2 = el(value)
+                    element2.set('{http://www.w3.org/2001/XMLSchema-instance}'+'type', etree.QName('{http://purl.org/dc/terms/}URI'))
+                    oai_dc.append(element2)
             elif field == 'identifier' and data['metadata'].get('identifier.doi'):
                 value = data['metadata']['identifier.url'][0]
                 element2 = el(value)
@@ -101,7 +102,8 @@ class OAIDC(object):
                     oai_dc.append(el(value))
             else:
                 for value in data['metadata'].get(field, []):
-                    oai_dc.append(el(value))
+                    if value:
+                        oai_dc.append(el(value))
         
         
         

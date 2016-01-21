@@ -133,8 +133,9 @@ class OAIDATACITE(object):
             resource.append(descriptions)
             for description in data['metadata'].get('description'):
                 el = getattr(DATACITE, "description")
-                descriptionElement = el(description)
-                descriptions.append(descriptionElement)
+                if description:
+                    descriptionElement = el(description)
+                    descriptions.append(descriptionElement)
 
         if (data['metadata'].get('relation.hasPart')):
             relatedIdentifiers = DATACITE.relatedIdentifiers()

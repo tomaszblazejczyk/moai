@@ -2,8 +2,8 @@ import datetime
 
 import ckan.model.meta as meta
 from ckan.model import Package, Resource, PackageExtra, Vocabulary
-from ckanext.ceon.model import CeonPackageAuthor
-from ckanext.doi.model.doi import DOI
+from ckanext.ceon.model.metadata import CeonPackageAuthor
+from ckanext.ceon.model.doi import CeonPackageDOI
 
 from moai.utils import get_moai_log
 
@@ -81,7 +81,7 @@ class CKANDataFactory(object):
                 licenses = []
                 for packageOfResource in packagesOfResourceList:
                     doi = None
-                    doiList = meta.Session.query(DOI).filter(DOI.package_id == packageOfResource.id)
+                    doiList = meta.Session.query(CeonPackageDOI).filter(CeonPackageDOI.package_id == packageOfResource.id)
                     for doiCandidate in doiList:
                         doi = doiCandidate.identifier
                     licenses.append(packageOfResource.license.url)
@@ -113,7 +113,7 @@ class CKANDataFactory(object):
         for package in packageList:
             
             doi = None
-            doiList = meta.Session.query(DOI).filter(DOI.package_id == package.id)
+            doiList = meta.Session.query(CeonPackageDOI).filter(CeonPackageDOI.package_id == package.id)
             for doiCandidate in doiList:
                 doi = doiCandidate.identifier
             
@@ -157,7 +157,11 @@ class CKANDataFactory(object):
             creatorAffiliation = []
             
             for packageAuthor in packageAuthors:
-                creator.append(packageAuthor.lastname + ' ' + packageAuthor.firstname)
+                authorName = packageAuthor.lastname
+                if (packageAuthor.firstname):
+                    authorName = authorName + ' ' + packageAuthor.firstname
+                creator.append(authorName)
+                    
                 if (packageAuthor.affiliation):
                     creatorAffiliation.append(packageAuthor.affiliation)
                 else:
